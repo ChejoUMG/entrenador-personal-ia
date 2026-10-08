@@ -53,3 +53,4 @@ Acceso rápido a las más citadas desde el código:
 | DEC-061 | Ficha de técnica con modelo 3D, mini mapa arrastrable y preferencias de vista | [docs/adr/DEC-061-tecnica-3d-y-mini-mapa.md](docs/adr/DEC-061-tecnica-3d-y-mini-mapa.md) |
 
 No agregar decisiones nuevas a este archivo: crear `docs/adr/DEC-NNN-*.md` y actualizar el índice de `docs/adr/README.md`.
+.
