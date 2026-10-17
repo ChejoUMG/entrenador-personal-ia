@@ -72,8 +72,9 @@ export const SQUAT_3D: ExerciseDefinition3D = {
   extraLandmarks: [LM.LEFT_SHOULDER, LM.RIGHT_SHOULDER],
   sideAngle: (w, s) => calculateAngle3D(w[SIDE[s].hip], w[SIDE[s].knee], w[SIDE[s].ankle]),
   combine: 'mean',
-  // De pie > 160°, abajo < 100° (DEC-010).
-  cycle: { polarity: 'min', restDeg: 160, effortDeg: 100, confirmMarginDeg: CONFIRM_MARGIN_DEG },
+  // De pie > 140°, abajo < 100° (DEC-010). El 3D de MediaPipe mide la rodilla de pie en
+  // ~146–152° (160° no se alcanzaba y la rep no se cerraba): ver DEC-066.
+  cycle: { polarity: 'min', restDeg: 140, effortDeg: 100, confirmMarginDeg: CONFIRM_MARGIN_DEG },
   perSideCycles: false,
   cooldownMs: 0,
   shape: { effortIsMinimum: true, concentricFirst: false },
@@ -161,6 +162,8 @@ export const PRESS_3D: ExerciseDefinition3D = {
   sideAngle: elbowAngle,
   combine: 'max',
   // Abajo < 100°, arriba > 150°; polaridad invertida: el esfuerzo es el ángulo máximo (DEC-018).
+  // Sin calibrar con personas: subirlo a 110° hacía contar repeticiones a medias (DEC-066);
+  // se calibra en el issue #58.
   cycle: { polarity: 'max', restDeg: 100, effortDeg: 150, confirmMarginDeg: CONFIRM_MARGIN_DEG },
   perSideCycles: true,
   cooldownMs: ARM_COOLDOWN_MS,
@@ -199,12 +202,17 @@ export const PRESS_3D: ExerciseDefinition3D = {
 
 // ─────────────────────── Ola 1: peso corporal (DEC-056, issue #39) ───────────────────────
 //
-// Umbrales iniciales propuestos en este repositorio, no calibrados todavía con personas:
-// se ajustan con las grabaciones por guion (DEC-055) y cualquier cambio que altere tests
+// Umbrales iniciales propuestos en este repositorio. Los de vuelta al reposo se calibraron
+// con las grabaciones de una persona (DEC-066); el resto sigue sin calibrar con personas.
+// Se ajustan con las grabaciones por guion (DEC-055) y cualquier cambio que altere tests
 // de comportamiento exige DEC.
 
-/** Codo por debajo de este ángulo = flexión profunda, en grados. */
-export const PUSHUP_GOOD_DEPTH_DEG = 90;
+/**
+ * Codo por debajo de este ángulo = flexión profunda, en grados. El 3D mide el codo menos
+ * doblado de lo que está: en las flexiones completas grabadas el fondo dio mediana 84° y
+ * p90 95°, y con 90° una de cada cuatro recibía "Baja más el pecho" estando abajo (DEC-066).
+ */
+export const PUSHUP_GOOD_DEPTH_DEG = 95;
 /** Línea hombros-cadera-tobillos por debajo de este ángulo = cadera fuera de línea, en grados. */
 export const PUSHUP_MIN_BODY_LINE_DEG = 160;
 /** Rodilla delantera por debajo de este ángulo = zancada profunda, en grados. */
@@ -248,8 +256,9 @@ export const PUSHUP_3D: ExerciseDefinition3D = {
   extraLandmarks: [],
   sideAngle: elbowAngle,
   combine: 'mean',
-  // Brazos extendidos > 150°, abajo < 100°.
-  cycle: { polarity: 'min', restDeg: 150, effortDeg: 100, confirmMarginDeg: CONFIRM_MARGIN_DEG },
+  // Brazos extendidos > 140°, abajo < 100°. El 3D mide los brazos estirados en ~140–156°:
+  // con 150° varias reps se fundían en un ciclo largo y se descartaban (DEC-066).
+  cycle: { polarity: 'min', restDeg: 140, effortDeg: 100, confirmMarginDeg: CONFIRM_MARGIN_DEG },
   perSideCycles: false,
   cooldownMs: 0,
   shape: { effortIsMinimum: true, concentricFirst: false },
@@ -292,7 +301,9 @@ export const LUNGE_3D: ExerciseDefinition3D = {
   sideAngle: (w, s) => calculateAngle3D(w[SIDE[s].hip], w[SIDE[s].knee], w[SIDE[s].ankle]),
   // La rodilla que más se dobla es la de la pierna delantera.
   combine: 'min',
-  cycle: { polarity: 'min', restDeg: 160, effortDeg: 110, confirmMarginDeg: CONFIRM_MARGIN_DEG },
+  // De pie > 135°, abajo < 110°. El 3D mide la rodilla delantera de pie entre ~131° y 170°
+  // según la toma: con 160° casi ninguna zancada se cerraba (DEC-066).
+  cycle: { polarity: 'min', restDeg: 135, effortDeg: 110, confirmMarginDeg: CONFIRM_MARGIN_DEG },
   perSideCycles: false,
   cooldownMs: 0,
   shape: { effortIsMinimum: true, concentricFirst: false },
