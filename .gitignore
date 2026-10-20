@@ -12,6 +12,13 @@ dist
 dist-ssr
 *.local
 
+# Variables de entorno: solo .env.example va al repo (regla dura 3, DEC-069)
+.env
+.env.*
+!.env.example
+supabase/.env
+supabase/.temp/
+
 # Tests y compilación incremental
 coverage/
 .vitest/
@@ -49,3 +56,7 @@ ml/data/samples/
 # Cache de Python
 __pycache__/
 *.pyc
+
+# Playwright
+test-results/
+playwright-report/

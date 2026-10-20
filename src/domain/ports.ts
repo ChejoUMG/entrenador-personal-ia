@@ -10,6 +10,7 @@
  * su versión snake_case. Los puertos de coaching, planes y rankings llegan con sus tablas.
  */
 
+import type { SignUpInput } from './auth.ts';
 import type { CatalogExercise, EquipmentTag } from './catalog.ts';
 import type {
   ExperienceLevel, ProgramType, TrainingGoal, TrainingLocation, TrainingMethod,
@@ -19,6 +20,8 @@ import type {
 export interface Profile {
   displayName: string;
   birthYear: number | null;
+  /** 1 (enero) a 12; junto con el año, para la puerta 18+ (DEC-069). */
+  birthMonth: number | null;
   heightCm: number | null;
   weightKg: number | null;
   experienceLevel: ExperienceLevel;
@@ -33,10 +36,57 @@ export interface Profile {
 }
 
 export interface ProfileRepository {
-  /** null si el usuario aún no creó su perfil. */
+  /** null si no hay sesión. El perfil lo crea el alta de la cuenta (`AuthRepository.signUp`). */
   get(): Promise<Profile | null>;
-  /** Crea o reemplaza el perfil del usuario. */
+  /** Actualiza los campos editables; la aceptación del aviso y la fecha no se tocan (DEC-069). */
   save(profile: Profile): Promise<void>;
+}
+
+/** Usuario autenticado; sin datos del perfil (esos van por `ProfileRepository`). */
+export interface AuthUser {
+  id: string;
+  email: string;
+}
+
+/**
+ * - `signed_in`: inicio de sesión, al volver del enlace de confirmación y al abrir la app
+ *   con una sesión guardada.
+ * - `password_recovery`: el usuario abrió el enlace de recuperación; la app debe pedirle la
+ *   contraseña nueva y llamar a `updatePassword`.
+ * - `signed_out`: cierre de sesión o sesión vencida que no se pudo renovar.
+ */
+/** Tipos de enlace que mandan las plantillas de `supabase/templates/` (DEC-069). */
+export type EmailLinkType = 'email' | 'recovery';
+
+export type AuthEvent = 'signed_in' | 'signed_out' | 'password_recovery' | 'user_updated';
+
+/**
+ * Cuentas con correo y contraseña (issue #60, DEC-069). Los errores son siempre `AuthError`
+ * (`auth.ts`) con mensajes que no revelan si un correo tiene cuenta.
+ */
+export interface AuthRepository {
+  /**
+   * Crea la cuenta y su perfil (el servidor impone la edad y el aviso). Resuelve igual si el
+   * correo ya existía, para no revelarlo: la app siempre dice "revisa tu correo".
+   */
+  signUp(input: SignUpInput): Promise<{ needsEmailConfirmation: boolean }>;
+  signIn(input: { email: string; password: string; captchaToken?: string }): Promise<AuthUser>;
+  /** Cierra la sesión en este dispositivo; si no hay red, la borra igual en local. */
+  signOut(): Promise<void>;
+  /** Envía el correo de recuperación. Resuelve igual exista o no la cuenta. */
+  requestPasswordReset(input: { email: string; captchaToken?: string }): Promise<void>;
+  /**
+   * Canjea el enlace del correo (`?token_hash=…&type=…`). Funciona en cualquier navegador,
+   * también si el correo se abre fuera de la PWA instalada. `recovery` emite
+   * `password_recovery`; `email` confirma la cuenta e inicia sesión. Un solo uso, vence en 1 h.
+   */
+  verifyEmailLink(input: { tokenHash: string; type: EmailLinkType }): Promise<void>;
+  /** Contraseña nueva para el usuario con sesión (tras `password_recovery` o desde Perfil). */
+  updatePassword(newPassword: string): Promise<void>;
+  /** Usuario de la sesión guardada en el dispositivo; null si no hay sesión. */
+  currentUser(): Promise<AuthUser | null>;
+  /** Devuelve la función para cancelar la suscripción. */
+  onAuthChange(listener: (event: AuthEvent, user: AuthUser | null) => void): () => void;
 }
 
 /** Catálogo de solo lectura: se siembra con migraciones, nadie lo escribe desde el cliente. */

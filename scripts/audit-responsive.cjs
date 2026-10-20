@@ -13,7 +13,7 @@
  * repo hasta que exista su DEC (propuesta en DEC-060). Sin red a los CDN de MediaPipe, pasa
  * MODEL_PATH con el archivo pose_landmarker_lite.task descargado.
  */
-const { chromium } = require('playwright');
+const { chromium } = require('@playwright/test');
 const path = require('path');
 const fs = require('fs');
 const WASM = path.join(__dirname, '..', 'node_modules', '@mediapipe', 'tasks-vision', 'wasm');
@@ -142,6 +142,16 @@ async function withSafe(ctx, dev) {
       localStorage.setItem('fitnet_history_v1', JSON.stringify([r('a', -2, 10, 9, 'baja'), r('b', -1, 12, 10, 'moderada'), r('c', 0, 10, 9, 'baja')]));
       localStorage.setItem('fitnet_profile_v1', JSON.stringify({ questionnaire: { goal: 'muscle_gain', level: 'intermediate', location: 'home_limited', equipment: ['dumbbell', 'band'], daysPerWeek: 4, sessionMinutes: 60 }, programStartedAt: d(-3, 8), voiceEnabled: true }));
     });
+    // Pantallas de cuenta (#60). Con un build con VITE_ENABLE_ACCOUNTS=true la app entera
+    // pide cuenta, así que se auditan solo estas: ACCOUNTS=1 node scripts/audit-responsive.cjs
+    if (process.env.ACCOUNTS) {
+      for (const [label, hash] of [['cuenta-bienvenida', '#/cuenta'], ['cuenta-registro', '#/cuenta/registro'], ['cuenta-entrar', '#/cuenta/entrar'], ['cuenta-recuperar', '#/cuenta/recuperar'], ['privacidad', '#/privacidad']]) {
+        await page.goto(BASE + hash); await page.waitForTimeout(700);
+        all.push(...await audit(page, dev, label));
+      }
+      await ctx.close();
+      continue;
+    }
     for (const [label, hash] of [['hoy', '#/'], ['rutinas', '#/rutinas'], ['ejercicios', '#/ejercicios'], ['perfil', '#/perfil']]) {
       await page.goto(BASE + hash); await page.reload(); await page.waitForTimeout(700);
       if (label === 'ejercicios') await page.locator('.exercise-row').first().click();
